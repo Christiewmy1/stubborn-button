@@ -11,31 +11,29 @@ const NONE_PRESET: SoundPreset = { id: "none", label: "None", path: "" };
 
 const SOUND_OPTIONS: SoundPreset[] = [NONE_PRESET, ...SOUND_PRESETS];
 
-function SoundCell({
-  preset,
+function SoundRow({
+  label,
   selected,
   onSelect,
   onPreview,
 }: {
-  preset: SoundPreset;
+  label: string;
   selected: boolean;
   onSelect: () => void;
   onPreview?: () => void;
 }) {
   return (
     <div
-      className={`flex items-center border ${
-        selected ? "border-ink" : "border-ink/20"
+      className={`flex items-center border-b border-ink/10 last:border-b-0 ${
+        selected ? "bg-ink text-paper" : "bg-transparent text-ink"
       }`}
     >
       <button
         type="button"
         onClick={onSelect}
-        className={`min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-sm ${
-          selected ? "bg-ink text-paper" : "bg-transparent text-ink"
-        }`}
+        className="min-w-0 flex-1 cursor-pointer truncate px-4 py-3 text-left text-sm"
       >
-        {preset.label}
+        {label}
       </button>
       {onPreview && (
         <button
@@ -44,11 +42,11 @@ function SoundCell({
             e.stopPropagation();
             onPreview();
           }}
-          aria-label={`Preview ${preset.label}`}
-          className={`shrink-0 cursor-pointer border-0 border-l px-2 py-2 ${
+          aria-label={`Preview ${label}`}
+          className={`shrink-0 cursor-pointer border-0 border-l px-3 py-3 ${
             selected
               ? "border-paper/20 text-paper/70 hover:text-paper"
-              : "border-ink/20 text-ink/60 hover:text-ink"
+              : "border-ink/10 text-ink/50 hover:text-ink"
           }`}
         >
           <Play size={14} />
@@ -81,17 +79,16 @@ export default function SoundPicker({ value, onChange }: SoundPickerProps) {
         </p>
       </div>
 
-      <div className="max-h-56 overflow-y-auto overscroll-contain border border-ink/20 p-2 sm:max-h-none sm:overflow-visible sm:p-0">
-        <div className="grid grid-cols-2 gap-2">
+      <div className="overflow-hidden border border-ink/20">
+        <div className="max-h-56 overflow-y-auto overscroll-contain">
           {SOUND_OPTIONS.map((preset) => {
             const isNone = preset.path === "";
-            const isSelected = selectedPreset === preset.path;
 
             return (
-              <SoundCell
+              <SoundRow
                 key={preset.id}
-                preset={preset}
-                selected={isSelected}
+                label={preset.label}
+                selected={selectedPreset === preset.path}
                 onSelect={() => onChange(preset.path)}
                 onPreview={isNone ? undefined : () => playPreview(preset.path)}
               />
