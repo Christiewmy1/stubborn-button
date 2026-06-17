@@ -21,7 +21,6 @@ export default function PrankExperience({ config }: PrankExperienceProps) {
         <PageLayout narrow>
           <VictoryScreen
             message={config.victoryMessage}
-            imageUrl={config.victoryImageUrl || undefined}
             soundUrl={config.victorySoundUrl || undefined}
             onDismiss={() => setWon(false)}
           />

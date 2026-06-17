@@ -6,6 +6,8 @@ import { useMediaUpload } from "../../hooks/useMediaUpload";
 import FileUploadField from "./FileUploadField";
 import SassMessageList from "./SassMessageList";
 import ShareLinkPanel from "./ShareLinkPanel";
+import SoundPicker from "./SoundPicker";
+import { isCustomSound } from "../../lib/sounds";
 
 type CreatorFormProps = {
   onPreview?: (form: PrankFormState) => void;
@@ -15,7 +17,7 @@ export default function CreatorForm({ onPreview }: CreatorFormProps) {
   const [form, setForm] = useState<PrankFormState>(DEFAULT_PRANK);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const { upload, error: uploadError } = useMediaUpload();
+  const { uploadSound, error: uploadError } = useMediaUpload();
 
   const update = <K extends keyof PrankFormState>(key: K, value: PrankFormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -36,13 +38,8 @@ export default function CreatorForm({ onPreview }: CreatorFormProps) {
     }
   };
 
-  const handleImage = async (file: File) => {
-    const url = await upload(file, "victoryImageUrl");
-    if (url) update("victoryImageUrl", url);
-  };
-
   const handleSound = async (file: File) => {
-    const url = await upload(file, "victorySoundUrl");
+    const url = await uploadSound(file);
     if (url) update("victorySoundUrl", url);
   };
 
@@ -119,22 +116,20 @@ export default function CreatorForm({ onPreview }: CreatorFormProps) {
         />
       </div>
 
-      <FileUploadField
-        label="Victory image / sticker"
-        accept="image/*"
-        previewUrl={form.victoryImageUrl || undefined}
-        onFileSelect={handleImage}
-        onClear={() => update("victoryImageUrl", "")}
+      <SoundPicker
+        value={form.victorySoundUrl || ""}
+        onChange={(path) => update("victorySoundUrl", path)}
       />
 
-      <FileUploadField
-        label="Victory sound"
-        accept="audio/*"
-        previewUrl={form.victorySoundUrl || undefined}
-        isAudio
-        onFileSelect={handleSound}
-        onClear={() => update("victorySoundUrl", "")}
-      />
+      <div className="flex flex-col gap-2">
+        <p className="m-0 text-xs text-ink/50">Or upload your own (embedded in link)</p>
+        <FileUploadField
+          label="Custom sound"
+          previewUrl={isCustomSound(form.victorySoundUrl || "") ? form.victorySoundUrl : undefined}
+          onFileSelect={handleSound}
+          onClear={() => update("victorySoundUrl", "")}
+        />
+      </div>
 
       {uploadError && <p className="m-0 text-sm text-ink">{uploadError}</p>}
 

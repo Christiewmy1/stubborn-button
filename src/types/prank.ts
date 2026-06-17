@@ -4,7 +4,6 @@ export type PrankConfig = {
   noButtonText: string;
   sassMessages: string[];
   victoryMessage: string;
-  victoryImageUrl?: string;
   victorySoundUrl?: string;
   createdAt: string;
 };
