@@ -1,6 +1,6 @@
 import type { PrankFormState } from "../types/prank";
 
-export const APP_NAME = "nudgybutton";
+export const APP_NAME = "thestubbornbutton";
 export const APP_TAGLINE = "make them agree with you.";
 
 export const DEFAULT_PRANK: PrankFormState = {
