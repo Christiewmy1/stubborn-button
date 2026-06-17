@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { DANGER_RADIUS } from "../lib/constants";
 
 type Position = { x: number; y: number };
+type Bounds = { minX: number; maxX: number; minY: number; maxY: number };
 
 type UseEvasivePositionOptions = {
   enabled: boolean;
@@ -9,6 +10,7 @@ type UseEvasivePositionOptions = {
 };
 
 const TOUCH_DANGER_RADIUS = 140;
+const EDGE_PADDING = 8;
 
 export function useEvasivePosition({
   enabled,
@@ -26,18 +28,40 @@ export function useEvasivePosition({
 
   const dangerRadius = isTouch ? TOUCH_DANGER_RADIUS : DANGER_RADIUS;
 
+  const getBounds = useCallback((): Bounds | null => {
+    const container = containerRef.current;
+    const button = buttonRef.current;
+    if (!container || !button) return null;
+
+    const maxX = container.clientWidth - button.offsetWidth;
+    const maxY = container.clientHeight - button.offsetHeight;
+
+    if (maxX < EDGE_PADDING || maxY < EDGE_PADDING) return null;
+
+    return {
+      minX: EDGE_PADDING,
+      maxX: maxX - EDGE_PADDING,
+      minY: EDGE_PADDING,
+      maxY: maxY - EDGE_PADDING,
+    };
+  }, []);
+
+  const clampToBounds = useCallback((pos: Position, bounds: Bounds): Position => {
+    return {
+      x: Math.min(Math.max(bounds.minX, pos.x), bounds.maxX),
+      y: Math.min(Math.max(bounds.minY, pos.y), bounds.maxY),
+    };
+  }, []);
+
   const getRandomPosition = useCallback(
     (pointerX: number, pointerY: number): Position | null => {
       const container = containerRef.current;
       const button = buttonRef.current;
-      if (!container || !button) return null;
+      const bounds = getBounds();
+      if (!container || !button || !bounds) return null;
 
       const containerRect = container.getBoundingClientRect();
       const buttonRect = button.getBoundingClientRect();
-      const maxX = containerRect.width - buttonRect.width;
-      const maxY = containerRect.height - buttonRect.height;
-
-      if (maxX <= 0 || maxY <= 0) return null;
 
       const buttonCenter = {
         x: buttonRect.left - containerRect.left + buttonRect.width / 2,
@@ -49,10 +73,13 @@ export function useEvasivePosition({
         y: pointerY - containerRect.top,
       };
 
-      for (let attempt = 0; attempt < 20; attempt++) {
+      const rangeX = bounds.maxX - bounds.minX;
+      const rangeY = bounds.maxY - bounds.minY;
+
+      for (let attempt = 0; attempt < 40; attempt++) {
         const candidate = {
-          x: Math.random() * maxX,
-          y: Math.random() * maxY,
+          x: bounds.minX + Math.random() * rangeX,
+          y: bounds.minY + Math.random() * rangeY,
         };
 
         const candidateCenter = {
@@ -78,12 +105,15 @@ export function useEvasivePosition({
       const awayX = buttonCenter.x + (buttonCenter.x - relPointer.x);
       const awayY = buttonCenter.y + (buttonCenter.y - relPointer.y);
 
-      return {
-        x: Math.min(Math.max(0, awayX - buttonRect.width / 2), maxX),
-        y: Math.min(Math.max(0, awayY - buttonRect.height / 2), maxY),
-      };
+      return clampToBounds(
+        {
+          x: awayX - buttonRect.width / 2,
+          y: awayY - buttonRect.height / 2,
+        },
+        bounds,
+      );
     },
-    [dangerRadius],
+    [clampToBounds, dangerRadius, getBounds],
   );
 
   const moveAway = useCallback(
@@ -147,21 +177,23 @@ export function useEvasivePosition({
 
   useEffect(() => {
     if (initialized.current) return;
-    const container = containerRef.current;
-    const button = buttonRef.current;
-    if (!container || !button) return;
 
-    const containerRect = container.getBoundingClientRect();
-    const buttonRect = button.getBoundingClientRect();
-    const maxX = containerRect.width - buttonRect.width;
-    const maxY = containerRect.height - buttonRect.height;
+    const placeInitial = () => {
+      const button = buttonRef.current;
+      const bounds = getBounds();
+      if (!button || !bounds) return;
 
-    setPosition({
-      x: Math.max(0, maxX * 0.65),
-      y: Math.max(0, maxY * 0.5),
-    });
-    initialized.current = true;
-  }, []);
+      const centeredX = bounds.minX + (bounds.maxX - bounds.minX) / 2;
+
+      setPosition({
+        x: centeredX,
+        y: bounds.minY,
+      });
+      initialized.current = true;
+    };
+
+    requestAnimationFrame(() => requestAnimationFrame(placeInitial));
+  }, [getBounds]);
 
   return { containerRef, buttonRef, position, forceDodge };
 }

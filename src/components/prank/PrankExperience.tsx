@@ -2,9 +2,7 @@ import { useState } from "react";
 import type { PrankConfig } from "../../types/prank";
 import AppHeader from "../layout/AppHeader";
 import PageLayout from "../layout/PageLayout";
-import EvasiveButton from "./EvasiveButton";
 import PrankLayout from "./PrankLayout";
-import YesButton from "./YesButton";
 import VictoryScreen from "./VictoryScreen";
 
 type PrankExperienceProps = {
@@ -33,14 +31,13 @@ export default function PrankExperience({ config }: PrankExperienceProps) {
     <>
       <AppHeader hideTaglineOnMobile />
       <PageLayout narrow>
-        <PrankLayout title={config.title}>
-          <YesButton label={config.yesButtonText} onClick={() => setWon(true)} />
-          <EvasiveButton
-            label={config.noButtonText}
-            sassMessages={config.sassMessages}
-            enabled
-          />
-        </PrankLayout>
+        <PrankLayout
+          title={config.title}
+          yesLabel={config.yesButtonText}
+          onYes={() => setWon(true)}
+          noLabel={config.noButtonText}
+          sassMessages={config.sassMessages}
+        />
       </PageLayout>
     </>
   );

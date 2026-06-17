@@ -7,12 +7,14 @@ type EvasiveButtonProps = {
   label: string;
   sassMessages: string[];
   enabled: boolean;
+  fullArea?: boolean;
 };
 
 export default function EvasiveButton({
   label,
   sassMessages,
   enabled,
+  fullArea = false,
 }: EvasiveButtonProps) {
   const { message, showRandom } = useSassMessage(sassMessages);
   const canDodge = useDodgeThrottle();
@@ -30,7 +32,11 @@ export default function EvasiveButton({
   return (
     <div
       ref={containerRef}
-      className="relative mt-8 h-56 w-full touch-none sm:h-48"
+      className={
+        fullArea
+          ? "absolute inset-0 touch-none"
+          : "relative mt-8 h-56 w-full touch-none sm:h-48"
+      }
     >
       <SassBubble message={message} />
       <motion.button
