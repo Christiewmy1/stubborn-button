@@ -8,6 +8,8 @@ type UseEvasivePositionOptions = {
   onDodge?: () => void;
 };
 
+const TOUCH_DANGER_RADIUS = 140;
+
 export function useEvasivePosition({
   enabled,
   onDodge,
@@ -16,6 +18,13 @@ export function useEvasivePosition({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   const initialized = useRef(false);
+  const [isTouch, setIsTouch] = useState(false);
+
+  useEffect(() => {
+    setIsTouch(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
+
+  const dangerRadius = isTouch ? TOUCH_DANGER_RADIUS : DANGER_RADIUS;
 
   const getRandomPosition = useCallback(
     (pointerX: number, pointerY: number): Position | null => {
@@ -61,7 +70,7 @@ export function useEvasivePosition({
           candidateCenter.y - buttonCenter.y,
         );
 
-        if (distToPointer > DANGER_RADIUS && distFromCurrent > 40) {
+        if (distToPointer > dangerRadius && distFromCurrent > 40) {
           return candidate;
         }
       }
@@ -74,7 +83,18 @@ export function useEvasivePosition({
         y: Math.min(Math.max(0, awayY - buttonRect.height / 2), maxY),
       };
     },
-    [],
+    [dangerRadius],
+  );
+
+  const moveAway = useCallback(
+    (clientX: number, clientY: number) => {
+      const next = getRandomPosition(clientX, clientY);
+      if (next) {
+        setPosition(next);
+        onDodge?.();
+      }
+    },
+    [getRandomPosition, onDodge],
   );
 
   const dodge = useCallback(
@@ -82,23 +102,26 @@ export function useEvasivePosition({
       if (!enabled) return;
 
       const button = buttonRef.current;
-      const container = containerRef.current;
-      if (!button || !container) return;
+      if (!button) return;
 
       const buttonRect = button.getBoundingClientRect();
       const buttonCenterX = buttonRect.left + buttonRect.width / 2;
       const buttonCenterY = buttonRect.top + buttonRect.height / 2;
       const distance = Math.hypot(clientX - buttonCenterX, clientY - buttonCenterY);
 
-      if (distance < DANGER_RADIUS) {
-        const next = getRandomPosition(clientX, clientY);
-        if (next) {
-          setPosition(next);
-          onDodge?.();
-        }
+      if (distance < dangerRadius) {
+        moveAway(clientX, clientY);
       }
     },
-    [enabled, getRandomPosition, onDodge],
+    [enabled, dangerRadius, moveAway],
+  );
+
+  const forceDodge = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!enabled) return;
+      moveAway(clientX, clientY);
+    },
+    [enabled, moveAway],
   );
 
   useEffect(() => {
@@ -109,8 +132,17 @@ export function useEvasivePosition({
       dodge(e.clientX, e.clientY);
     };
 
+    const handlePointerDown = (e: PointerEvent) => {
+      dodge(e.clientX, e.clientY);
+    };
+
     container.addEventListener("pointermove", handlePointerMove);
-    return () => container.removeEventListener("pointermove", handlePointerMove);
+    container.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      container.removeEventListener("pointermove", handlePointerMove);
+      container.removeEventListener("pointerdown", handlePointerDown);
+    };
   }, [dodge, enabled]);
 
   useEffect(() => {
@@ -131,5 +163,5 @@ export function useEvasivePosition({
     initialized.current = true;
   }, []);
 
-  return { containerRef, buttonRef, position };
+  return { containerRef, buttonRef, position, forceDodge };
 }

@@ -17,7 +17,7 @@ export default function PrankExperience({ config }: PrankExperienceProps) {
   if (won) {
     return (
       <>
-        <AppHeader />
+        <AppHeader hideTaglineOnMobile />
         <PageLayout narrow>
           <VictoryScreen
             message={config.victoryMessage}
@@ -31,7 +31,7 @@ export default function PrankExperience({ config }: PrankExperienceProps) {
 
   return (
     <>
-      <AppHeader />
+      <AppHeader hideTaglineOnMobile />
       <PageLayout narrow>
         <PrankLayout title={config.title}>
           <YesButton label={config.yesButtonText} onClick={() => setWon(true)} />

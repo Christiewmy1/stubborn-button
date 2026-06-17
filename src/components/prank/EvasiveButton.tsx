@@ -22,13 +22,16 @@ export default function EvasiveButton({
     showRandom();
   };
 
-  const { containerRef, buttonRef, position } = useEvasivePosition({
+  const { containerRef, buttonRef, position, forceDodge } = useEvasivePosition({
     enabled,
     onDodge: handleDodge,
   });
 
   return (
-    <div ref={containerRef} className="relative mt-8 h-48 w-full">
+    <div
+      ref={containerRef}
+      className="relative mt-8 h-56 w-full touch-none sm:h-48"
+    >
       <SassBubble message={message} />
       <motion.button
         ref={buttonRef}
@@ -36,9 +39,16 @@ export default function EvasiveButton({
         tabIndex={enabled ? 0 : -1}
         animate={{ x: position.x, y: position.y }}
         transition={{ type: "spring", stiffness: 500, damping: 28 }}
-        onPointerEnter={() => enabled && handleDodge()}
+        onPointerDown={(e) => {
+          if (!enabled) return;
+          e.preventDefault();
+          forceDodge(e.clientX, e.clientY);
+        }}
+        onPointerEnter={(e) => {
+          if (!enabled) return;
+          forceDodge(e.clientX, e.clientY);
+        }}
         className="absolute left-0 top-0 cursor-default border border-ink/20 bg-muted-btn px-8 py-3 text-base font-medium text-ink"
-        style={{ touchAction: "none" }}
       >
         {label}
       </motion.button>

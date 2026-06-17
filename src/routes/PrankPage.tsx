@@ -28,7 +28,7 @@ export default function PrankPage() {
   if (loading) {
     return (
       <>
-        <AppHeader />
+        <AppHeader hideTaglineOnMobile />
         <PageLayout narrow>
           <p className="flex flex-1 items-center justify-center text-sm text-ink/50">
             loading…
@@ -41,7 +41,7 @@ export default function PrankPage() {
   if (error || !config) {
     return (
       <>
-        <AppHeader />
+        <AppHeader hideTaglineOnMobile />
         <PageLayout narrow>
           <section className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
             <p className="m-0 text-lg text-ink">This link doesn&apos;t look right.</p>
