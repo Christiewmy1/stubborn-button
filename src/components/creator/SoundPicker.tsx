@@ -1,35 +1,41 @@
 import { useRef } from "react";
 import { Play } from "lucide-react";
-import { SOUND_PRESETS, isCustomSound } from "../../lib/sounds";
+import { SOUND_PRESETS, isCustomSound, type SoundPreset } from "../../lib/sounds";
 
 type SoundPickerProps = {
   value: string;
   onChange: (path: string) => void;
 };
 
-function SoundRow({
-  label,
+const NONE_PRESET: SoundPreset = { id: "none", label: "None", path: "" };
+
+const SOUND_OPTIONS: SoundPreset[] = [NONE_PRESET, ...SOUND_PRESETS];
+
+function SoundCell({
+  preset,
   selected,
   onSelect,
   onPreview,
 }: {
-  label: string;
+  preset: SoundPreset;
   selected: boolean;
   onSelect: () => void;
   onPreview?: () => void;
 }) {
   return (
     <div
-      className={`flex items-center border-b border-ink/10 last:border-b-0 ${
-        selected ? "bg-ink text-paper" : "bg-transparent text-ink"
+      className={`flex items-center border ${
+        selected ? "border-ink" : "border-ink/20"
       }`}
     >
       <button
         type="button"
         onClick={onSelect}
-        className="min-w-0 flex-1 cursor-pointer truncate px-4 py-3 text-left text-sm"
+        className={`min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-sm ${
+          selected ? "bg-ink text-paper" : "bg-transparent text-ink"
+        }`}
       >
-        {label}
+        {preset.label}
       </button>
       {onPreview && (
         <button
@@ -38,11 +44,11 @@ function SoundRow({
             e.stopPropagation();
             onPreview();
           }}
-          aria-label={`Preview ${label}`}
-          className={`shrink-0 cursor-pointer border-0 border-l px-3 py-3 ${
+          aria-label={`Preview ${preset.label}`}
+          className={`shrink-0 cursor-pointer border-0 border-l px-2 py-2 ${
             selected
               ? "border-paper/20 text-paper/70 hover:text-paper"
-              : "border-ink/10 text-ink/50 hover:text-ink"
+              : "border-ink/20 text-ink/60 hover:text-ink"
           }`}
         >
           <Play size={14} />
@@ -64,7 +70,7 @@ export default function SoundPicker({ value, onChange }: SoundPickerProps) {
     audio.play().catch(() => {});
   };
 
-  const selectedPreset = !value || isCustomSound(value) ? null : value;
+  const selectedPreset = !value || isCustomSound(value) ? "" : value;
 
   return (
     <div className="flex flex-col gap-3">
@@ -75,64 +81,20 @@ export default function SoundPicker({ value, onChange }: SoundPickerProps) {
         </p>
       </div>
 
-      {/* Mobile: scrollable list */}
-      <div className="overflow-hidden border border-ink/20 sm:hidden">
-        <SoundRow label="None" selected={!value} onSelect={() => onChange("")} />
-        <div className="max-h-56 overflow-y-auto overscroll-contain">
-          {SOUND_PRESETS.map((preset) => (
-            <SoundRow
-              key={preset.id}
-              label={preset.label}
-              selected={selectedPreset === preset.path}
-              onSelect={() => onChange(preset.path)}
-              onPreview={() => playPreview(preset.path)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Desktop: grid */}
-      <div className="hidden sm:block">
-        <button
-          type="button"
-          onClick={() => onChange("")}
-          className={`mb-2 w-full cursor-pointer border px-3 py-2 text-left text-sm transition-colors ${
-            !value
-              ? "border-ink bg-ink text-paper"
-              : "border-ink/20 bg-transparent text-ink hover:border-ink/40"
-          }`}
-        >
-          None
-        </button>
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
-          {SOUND_PRESETS.map((preset) => {
+      <div className="max-h-56 overflow-y-auto overscroll-contain border border-ink/20 p-2 sm:max-h-none sm:overflow-visible sm:p-0">
+        <div className="grid grid-cols-2 gap-2">
+          {SOUND_OPTIONS.map((preset) => {
+            const isNone = preset.path === "";
             const isSelected = selectedPreset === preset.path;
 
             return (
-              <div
+              <SoundCell
                 key={preset.id}
-                className={`flex items-center border ${
-                  isSelected ? "border-ink" : "border-ink/20"
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => onChange(preset.path)}
-                  className={`min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-sm ${
-                    isSelected ? "bg-ink text-paper" : "bg-transparent text-ink"
-                  }`}
-                >
-                  {preset.label}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => playPreview(preset.path)}
-                  aria-label={`Preview ${preset.label}`}
-                  className="cursor-pointer border-0 border-l border-ink/20 bg-transparent px-2 py-2 text-ink/60 hover:text-ink"
-                >
-                  <Play size={14} />
-                </button>
-              </div>
+                preset={preset}
+                selected={isSelected}
+                onSelect={() => onChange(preset.path)}
+                onPreview={isNone ? undefined : () => playPreview(preset.path)}
+              />
             );
           })}
         </div>
